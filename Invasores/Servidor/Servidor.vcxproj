@@ -118,7 +118,11 @@
     <ClCompile Include="servidor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="servidor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Servidor.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

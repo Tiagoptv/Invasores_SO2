@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <windows.h>
 #include <tchar.h>
+#include "..\DLL\dll.h"
 #include "servidor.h"
 
-LPVOID WINAPI controlaNaveInv(LPVOID params[]);
+void WINAPI controlaNaveInv(LPVOID params[]);
 void gotoxy(int x, int y);
 
 
@@ -26,15 +27,18 @@ Jogo setupJogo() {
 	}
 	for (int i = 0; i < j.nNavesInvEsquiva; i++) {																		//lançar threads que vão controlar as naves invasores esquiva
 		params[0] = j.nNavesInvBasica + i;
-		j.hThreadsNavesInv[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)controlaNaveInv, (LPVOID)params, 0, NULL);
+		params[1] = 2;
+		j.hThreadsNavesInv[j.nNavesInvBasica+i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)controlaNaveInv, (LPVOID)params, 0, NULL);
 		Sleep(500);
 	}
 	
 	return j;
 }
 
-LPVOID WINAPI controlaNaveInv(LPVOID params[]) {
+void WINAPI controlaNaveInv(LPVOID params[]) {
 	//lógica relativa ao controlo da nave invasora
+
+	//Código apenas para teste do lançamento das threads
 	int nMax = 1000;
 	int x, y;
 	int id = (int)params[0];
@@ -47,11 +51,9 @@ LPVOID WINAPI controlaNaveInv(LPVOID params[]) {
 		gotoxy(x,y);
 		_tprintf(TEXT("Id: %d  n= %d"), id, i);
 		ReleaseMutex(hMutexJogo);
-		Sleep(50);
+		Sleep(25);
 	}
-	return 0;
 }
-
 
 
 void gotoxy(int x, int y) {
@@ -64,22 +66,16 @@ void gotoxy(int x, int y) {
 	SetConsoleCursorPosition(hStdout, coord);
 }
 
-
-
 int main() {
 	Jogo j;
 	j = setupJogo();
 	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
 
-	for (int i = 0; i < 4; i++)	{
-		if (j.hThreadsNavesInv[i] == NULL) {
-			_tprintf(TEXT("Erro ao criar a thread n.%d"), i);
-		}
-	}
-	DWORD aux = WAIT_ABANDONED_0;
-	DWORD teste = WaitForMultipleObjects(4, j.hThreadsNavesInv, TRUE, INFINITE);
+	WaitForMultipleObjects(4, j.hThreadsNavesInv, TRUE, INFINITE);
+
 	for (int i = 0; i < 4; i++)	{
 		CloseHandle(j.hThreadsNavesInv[i]);
 	}
+
 	return 0;
 }
