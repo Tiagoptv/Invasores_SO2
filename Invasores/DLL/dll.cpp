@@ -8,7 +8,8 @@ void leJogo(DadosCtrl * cDados, Jogo * jogo) {
 	WaitForSingleObject(cDados->hEventJogo, INFINITE);
 	ResetEvent(cDados->hEventJogo);
 	WaitForSingleObject(cDados->hMutexJogo, INFINITE);
-	jogo = cDados->jogoPartilhado;
+	//jogo = cDados->jogoPartilhado;
+	CopyMemory(jogo, cDados->jogoPartilhado, sizeof(Jogo));
 	ReleaseMutex(cDados->hMutexJogo);
 }
 
@@ -59,6 +60,7 @@ void escreveMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg) {
 void leMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg) {
 	
 	WaitForSingleObject(cDados->hMutexMsg, INFINITE);
-	msg = cDados->msgPartilhada;
+	CopyMemory(msg, cDados->msgPartilhada, sizeof(MSG_PARTILHADA));
+	//msg = cDados->msgPartilhada;
 	ReleaseMutex(cDados->hMutexMsg);
 }
