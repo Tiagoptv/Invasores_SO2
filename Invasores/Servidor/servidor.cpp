@@ -10,6 +10,40 @@ void gotoxy(int x, int y);
 
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
 
+bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
+
+	cDados->hMapFileJogo = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(Jogo), NOME_FM_JOGO);
+	if (cDados->hMapFileJogo == NULL) {
+		_tprintf(TEXT("Erro ao mapear memória partilhada! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	cDados->hMutexJogo = CreateMutex(NULL, FALSE, NOME_MUTEX_JOGO_MEM);
+	if (cDados->hMutexJogo == NULL) {
+		_tprintf(TEXT("Erro ao criar o mutex! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	cDados->hEventJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoJogo"));
+	if (cDados->hEventJogo == NULL) {
+		_tprintf(TEXT("Erro ao criar o evento relativo ao jogo! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
+
+	WaitForSingleObject(cDados->hMutexJogo, INFINITE);
+	cDados->jogoPartilhado = jogo;
+	ReleaseMutex(cDados->hMutexJogo);
+
+	//Evento para avisar a gateway que o jogo na memória partilhada foi atualizado
+	SetEvent(cDados->hEventJogo);
+}
+
+
 Jogo setupJogo() {
 	int params[2];				//param 1 -> id  | param2 -> tipo       tipo = 1 -> Básica | (int)tipo = 2 -> Esquiva
 
@@ -38,7 +72,7 @@ Jogo setupJogo() {
 void WINAPI controlaNaveInv(LPVOID params[]) {
 	//lógica relativa ao controlo da nave invasora
 
-	//Código apenas para teste do lançamento das threads
+	//Código apenas para teste do lançamento das threads e teste da memória partilhada
 	int nMax = 1000;
 	int x, y;
 	int id = (int)params[0];
@@ -53,6 +87,21 @@ void WINAPI controlaNaveInv(LPVOID params[]) {
 		ReleaseMutex(hMutexJogo);
 		Sleep(25);
 	}
+
+	DadosCtrl cDados;
+	Jogo j;
+
+	cDados.hMapFileJogo = OpenFileMapping(FILE_MAP_READ, FALSE, NOME_FM_JOGO);
+	cDados.hMutexJogo = OpenMutex(SYNCHRONIZE, FALSE, NOME_MUTEX_JOGO_MEM);
+
+	WaitForSingleObject(cDados.hMutexJogo,INFINITE);
+	//leJogo(&cDados, &j);
+	ReleaseMutex(cDados.hMutexJogo);
+
+
+	CloseHandle(cDados.hMutexJogo);
+	UnmapViewOfFile(cDados.hMapFileJogo);
+
 }
 
 
@@ -71,11 +120,23 @@ int main() {
 	j = setupJogo();
 	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
 
+	DadosCtrl cDados;
+
+
+
+	iniciaMemJogo(&cDados);
+
+	escreveJogo(&cDados, &j);
+
 	WaitForMultipleObjects(4, j.hThreadsNavesInv, TRUE, INFINITE);
 
 	for (int i = 0; i < 4; i++)	{
 		CloseHandle(j.hThreadsNavesInv[i]);
 	}
+
+	CloseHandle(cDados.hMutexJogo);
+	CloseHandle(cDados.hEventJogo);
+	UnmapViewOfFile(cDados.hMapFileJogo);
 
 	return 0;
 }

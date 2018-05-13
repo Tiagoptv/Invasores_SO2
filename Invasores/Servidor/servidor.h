@@ -6,10 +6,13 @@ typedef struct {
 
 typedef struct {
 	int x, y;
+	char c;												// caracter que representa o tiro  por ex: '^' para defensor e '|' para invasor
 }Tiro;
 
 typedef struct {
+	TCHAR nome[24];
 	int x, y, vidas, taxaDisparo, velMovimento;
+	char c;												// caracter que representa a nave
 	bool imune, teclasInvertidas;
 	Powerup powerups[3];								//Substituir por nMaxPowerups num futuro próximo
 	Tiro tiros[10];										//Substituir por nMaxTiros num futuro próximo
@@ -17,8 +20,10 @@ typedef struct {
 
 typedef struct {
 	int x, y, vida, taxaDisparo, velMovimento;
+	char direcao;										// 'e'= esquerda 'd'= direira 
+	char c;												// caracter que representa a nave
 	Powerup powerups[3];								//Substituir por nMaxPowerups num futuro próximo
-	Tiro tiros[10];										//Substituir por nMaxTiros num futuro próximo
+	Tiro bombas[10];									//Substituir por nMaxBombas num futuro próximo
 }NaveInvasora;
 
 
