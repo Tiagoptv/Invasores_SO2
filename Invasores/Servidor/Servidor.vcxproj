@@ -79,6 +79,9 @@
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>D:\Documentos\ISEC\2ºAno\2ºSemestre\SO2\Prática\TP\InvasoresSO2\Invasores\Debug\DLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

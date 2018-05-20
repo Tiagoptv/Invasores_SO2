@@ -36,7 +36,8 @@ bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memór
 void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 
 	WaitForSingleObject(cDados->hMutexJogo, INFINITE);
-	cDados->jogoPartilhado = jogo;
+	//cDados->jogoPartilhado = jogo;
+	CopyMemory(cDados->jogoPartilhado, jogo, sizeof(Jogo));
 	ReleaseMutex(cDados->hMutexJogo);
 
 	//Evento para avisar a gateway que o jogo na memória partilhada foi atualizado
@@ -89,13 +90,12 @@ void WINAPI controlaNaveInv(LPVOID params[]) {
 	}
 
 	DadosCtrl cDados;
-	Jogo j;
+	//Jogo j;
 
 	cDados.hMapFileJogo = OpenFileMapping(FILE_MAP_READ, FALSE, NOME_FM_JOGO);
 	cDados.hMutexJogo = OpenMutex(SYNCHRONIZE, FALSE, NOME_MUTEX_JOGO_MEM);
 
 	WaitForSingleObject(cDados.hMutexJogo,INFINITE);
-	//leJogo(&cDados, &j);
 	ReleaseMutex(cDados.hMutexJogo);
 
 
@@ -115,18 +115,51 @@ void gotoxy(int x, int y) {
 	SetConsoleCursorPosition(hStdout, coord);
 }
 
+// função apenas para teste
+// apagar depois de testar
+void WINAPI testeMem() {
+	DadosCtrl cDados;
+	Jogo j;
+
+	cDados.hMapFileJogo = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, NOME_FM_JOGO);
+	if (cDados.hMapFileJogo == NULL) {
+		_tprintf(TEXT("Erro ao abrir memoria mapeada!"));
+		return;
+	}
+
+	cDados.jogoPartilhado = (Jogo*)MapViewOfFile(cDados.hMapFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Jogo));
+	if (cDados.jogoPartilhado == NULL) {
+		_tprintf(TEXT("Erro ao abrir vista do jogo partilhado!"));
+		return;
+	}
+
+	leJogo(&cDados, &j);
+
+	return;
+}
+
 int main() {
+
 	Jogo j;
 	j = setupJogo();
 	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
 
+
 	DadosCtrl cDados;
-
-
 
 	iniciaMemJogo(&cDados);
 
+	cDados.jogoPartilhado = (Jogo*)MapViewOfFile(cDados.hMapFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Jogo));
+	if (cDados.jogoPartilhado == NULL) {
+		_tprintf(TEXT("Erro ao criar view da memoria!"));
+		return 0;
+	}
+
+
 	escreveJogo(&cDados, &j);
+
+	j.hThreadsNavesInv[4] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)testeMem, NULL, 0, NULL);
+
 
 	WaitForMultipleObjects(4, j.hThreadsNavesInv, TRUE, INFINITE);
 
