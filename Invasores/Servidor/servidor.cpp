@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <windows.h>
 #include <tchar.h>
+#include <time.h>
 #include "..\DLL\dll.h"
 #include "servidor.h"
 
 void WINAPI controlaNaveInv(LPVOID params[]);
 void gotoxy(int x, int y);
+Jogo j;
 
 
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
@@ -48,9 +50,9 @@ void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 Jogo setupJogo() {
 	int params[2];				//param 1 -> id  | param2 -> tipo       tipo = 1 -> Básica | (int)tipo = 2 -> Esquiva
 
-	Jogo j;
-	j.dimX = 500;
-	j.dimY = 500;
+	//Jogo j;
+	j.dimX = 100;
+	j.dimY = 100;
 	j.nNavesInvBasica = 2;
 	j.nNavesInvEsquiva = 2;
 
@@ -73,8 +75,80 @@ Jogo setupJogo() {
 void WINAPI controlaNaveInv(LPVOID params[]) {
 	//lógica relativa ao controlo da nave invasora
 
+	int nMovs = 0;					//Contador de movimentos p/ taxa de disparo
+	int proxX = 0, proxY = 0; 
+	NaveInvasora naveInv;
+
+	//posicao das naves invasoras
+	naveInv.x = 3 + (int)params[0];
+	naveInv.y = 3;
+	
+	if (naveInv.x > 13 && naveInv.x <= 23) {
+		naveInv.x -= 10;
+		naveInv.y++;
+	}
+	if (naveInv.x > 23 && naveInv.x <= 33) {
+		naveInv.x -= 20;
+		naveInv.y+=2;
+	}
+	if (naveInv.x > 33 && naveInv.x <= 43) {
+		naveInv.x -= 30;
+		naveInv.y+=3;
+	}
+	if (naveInv.x > 43 && naveInv.x <= 53) {
+		naveInv.x -= 40;
+		naveInv.y+=4;
+	}
+
+	//caracteristicas especificas do tipo de nave
+	if ((int)params[1] == 1)
+	{
+		naveInv.vida = 1;
+		naveInv.taxaDisparo = 10;
+		naveInv.velMovimento = 10;				//ver e modificar como pede no enunciado mais tarde
+		naveInv.direcao = 'd';
+		naveInv.caracter = '@';
+		// falta powerups e bombas
+	}
+	if ((int)params[1] == 2)
+	{
+		naveInv.vida = 3;
+		naveInv.taxaDisparo = 16;
+		naveInv.velMovimento = 11;				//ver e modificar como pede no enunciado mais tarde
+		naveInv.direcao = 'd';
+		naveInv.caracter = '#';
+		// falta powerups e bombas	
+	}
+
+	//mover invasor
+	if (naveInv.direcao = 'd') {
+		naveInv.x += naveInv.velMovimento;
+		
+		if (naveInv.x >= j.dimX) {
+			naveInv.x = j.dimX;
+			naveInv.y++;
+			naveInv.direcao = 'e';
+		}
+	}
+	if (naveInv.direcao = 'e') {
+		naveInv.x -= naveInv.velMovimento;
+		
+		if (naveInv.x <= 3) {
+			naveInv.x = 3;
+			naveInv.y++;
+			naveInv.direcao = 'd';
+		}
+	}
+	++nMovs;
+
+	//ver se dispara
+	if (nMovs == naveInv.taxaDisparo) {
+		//codigo para disparar
+		nMovs = 0;
+	}
+
 	//Código apenas para teste do lançamento das threads e teste da memória partilhada
-	int nMax = 1000;
+	/*int nMax = 1000;
 	int x, y;
 	int id = (int)params[0];
 	
@@ -100,7 +174,7 @@ void WINAPI controlaNaveInv(LPVOID params[]) {
 
 
 	CloseHandle(cDados.hMutexJogo);
-	UnmapViewOfFile(cDados.hMapFileJogo);
+	UnmapViewOfFile(cDados.hMapFileJogo);*/
 
 }
 
@@ -140,7 +214,8 @@ void WINAPI testeMem() {
 
 int main() {
 
-	Jogo j;
+	//Jogo j;
+	srand(time(NULL));
 	j = setupJogo();
 	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
 
