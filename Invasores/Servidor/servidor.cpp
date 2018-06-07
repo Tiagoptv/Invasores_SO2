@@ -7,8 +7,39 @@
 void WINAPI controlaNaveInv(LPVOID params[]);
 void gotoxy(int x, int y);
 
-
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
+
+
+
+//Memória Partilhada
+bool iniciaMemMsg(DadosCtrl * cDados) {							// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
+
+	cDados->hMapFileMsg = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MSG), NOME_FM_MSG);
+	if (cDados->hMapFileMsg == NULL) {
+		_tprintf(TEXT("Erro ao mapear memória partilhada! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	cDados->hMutexIndiceMsg = CreateMutex(NULL, FALSE, TEXT("mutexMsgOut"));
+	if (cDados->hMutexIndiceMsg == NULL) {
+		_tprintf(TEXT("Erro ao criar o mutex! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	cDados->hSemPodeEscrever = CreateSemaphore(NULL, N_SLOTS_MSG, N_SLOTS_MSG, NOME_SEM_PODE_ESCREVER);
+	if (cDados->hSemPodeEscrever == NULL) {
+		_tprintf(TEXT("Erro ao criar o semaforo relativo a escrever no buffer! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	cDados->hSemPodeLer = CreateSemaphore(NULL, N_SLOTS_MSG, N_SLOTS_MSG, NOME_SEM_PODE_LER);
+	if (cDados->hSemPodeLer == NULL) {
+		_tprintf(TEXT("Erro ao criar o evento relativo a mensagens enviadas pela gateway! (%d)"), GetLastError());
+		return FALSE;
+	}
+
+	return TRUE;
+}
 
 bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
 
@@ -43,6 +74,9 @@ void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 	//Evento para avisar a gateway que o jogo na memória partilhada foi atualizado
 	SetEvent(cDados->hEventJogo);
 }
+
+
+
 
 
 Jogo setupJogo() {
