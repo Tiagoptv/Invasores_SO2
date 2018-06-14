@@ -8,7 +8,7 @@
 void WINAPI controlaNaveInv(LPVOID params[]);
 void gotoxy(int x, int y);
 Jogo j;
-
+DadosCtrl cDados;
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
 
 
@@ -16,7 +16,7 @@ HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das 
 //Memória Partilhada
 bool iniciaMemMsg(DadosCtrl * cDados) {							// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
 
-	cDados->hMapFileMsg = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MSG), NOME_FM_MSG);
+	cDados->hMapFileMsg = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MSG_PARTILHADA), NOME_FM_MSG);
 	if (cDados->hMapFileMsg == NULL) {
 		_tprintf(TEXT("Erro ao mapear memória partilhada! (%d)"), GetLastError());
 		return FALSE;
@@ -77,7 +77,15 @@ void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 	SetEvent(cDados->hEventJogo);
 }
 
+void WINAPI resolveMensagens() {
+	Mensagem msg;
 
+	while (1) {
+		leMsg(&cDados, &msg);
+
+		//lógica de jogo
+	}
+}
 
 
 
@@ -241,7 +249,7 @@ void WINAPI testeMem() {
 		return;
 	}
 
-	leJogo(&cDados, &j);
+	//leJogo(&cDados, &j);
 
 	return;
 }
@@ -253,8 +261,6 @@ int main() {
 	j = setupJogo();
 	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
 
-
-	DadosCtrl cDados;
 
 	iniciaMemJogo(&cDados);
 

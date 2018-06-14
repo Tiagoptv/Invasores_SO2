@@ -5,7 +5,12 @@
 
 typedef struct {
 	TCHAR nomeEmissor[24];
-	TCHAR mensagens[12][24];		//Penso que as mensagens vão ser só para avisar o que o cliente faz (andou para a direita/esquerda, etc...)
+	TCHAR mensagem[24];		//Penso que as mensagens vão ser só para avisar o que o cliente faz (andou para a direita/esquerda, etc...)
+}Mensagem;
+
+typedef struct {
+	Mensagem msg[12];
+	int in, out;
 }MSG_PARTILHADA;
 
 typedef struct {
@@ -31,8 +36,6 @@ extern "C"
 {
 	//Funções a serem exportadas/importadas
 	//Zona de mensagens
-	DLL_IMP_API void escreveMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg);
-	DLL_IMP_API void leMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg);
-
-	DLL_IMP_API void leJogo(DadosCtrl * cDados, Jogo * jogo);
+	DLL_IMP_API void escreveMsg(DadosCtrl * cDados, Mensagem * msg);
+	DLL_IMP_API void leMsg(DadosCtrl * cDados, Mensagem * msg);
 }

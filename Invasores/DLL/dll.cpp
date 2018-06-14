@@ -2,33 +2,42 @@
 #include<Windows.h>
 #include"dll.h"
 
-//Função que vai estar no projeto da gateway, mas vai ficar aqui temporariamente até que o projeto seja criado
-void leJogo(DadosCtrl * cDados, Jogo * jogo) {
-	
-	WaitForSingleObject(cDados->hEventJogo, INFINITE);
-	ResetEvent(cDados->hEventJogo);
-	WaitForSingleObject(cDados->hMutexJogo, INFINITE);
-	//jogo = cDados->jogoPartilhado;
-	CopyMemory(jogo, cDados->jogoPartilhado, sizeof(Jogo));
-	ReleaseMutex(cDados->hMutexJogo);
-}
-
 
 //Vai ser usado um evento para avisar que foi posta uma nova mensagem na memória partilhada no ciclo que vai incluir a função de leitura/escrita 
 //Leitura -> espera evento e de seguida dá ResetEvent() e lê a mensagem
 //Escrita -> escreve mensagem e dá SetEvent()
 
-void escreveMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg) {
+void escreveMsg(DadosCtrl * cDados, Mensagem * msg) {
+
+	int pos;
 	
-	WaitForSingleObject(cDados->hMutexMsg, INFINITE);
-	cDados->msgPartilhada = msg;
-	ReleaseMutex(cDados->hMutexMsg);
+	WaitForSingleObject(cDados->hSemPodeEscrever, INFINITE);
+
+	WaitForSingleObject(cDados->hMutexIndiceMsg, INFINITE);
+
+	pos = cDados->msgPartilhada->in;
+	cDados->msgPartilhada->in++;
+	
+	ReleaseMutex(cDados->hMutexIndiceMsg);
+
+	CopyMemory(&cDados->msgPartilhada->msg[pos], msg, sizeof(Mensagem));
+
+	ReleaseSemaphore(cDados->hSemPodeLer, 1, NULL);
 }
 
-void leMsg(DadosCtrl * cDados, MSG_PARTILHADA * msg) {
+void leMsg(DadosCtrl * cDados, Mensagem * msg) {		//em vez de MSG_PARTILHADA, recebe um ponteiro de um array de TCHAR que vai guardar a mensagem pretendida
+
+	int pos;
 	
-	WaitForSingleObject(cDados->hMutexMsg, INFINITE);
-	CopyMemory(msg, cDados->msgPartilhada, sizeof(MSG_PARTILHADA));
-	//msg = cDados->msgPartilhada;
-	ReleaseMutex(cDados->hMutexMsg);
+	WaitForSingleObject(cDados->hSemPodeLer, INFINITE);
+	WaitForSingleObject(cDados->hMutexIndiceMsg, INFINITE);
+
+	pos = cDados->msgPartilhada->out;
+	cDados->msgPartilhada->out++;
+	
+	ReleaseMutex(cDados->hMutexIndiceMsg);
+
+	CopyMemory(msg, &cDados->msgPartilhada->msg[pos], sizeof(Mensagem));
+
+	ReleaseSemaphore(cDados->hSemPodeEscrever,1,NULL);
 }
