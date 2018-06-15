@@ -56,6 +56,32 @@ Invasores/Servidor/x64/Debug/RCa01256
 Invasores/.vs/Invasores/v15/Solution.VC.db-shm
 Invasores/.vs/Invasores/v15/Browse.VC.db
 Invasores/.vs/Invasores/v15/Solution.VC.db-wal
+<<<<<<< HEAD
 Invasores/.vs/Invasores/v15/Solution.VC.db
 *.vcxproj
 *.log
+=======
+Invasores/Servidor/Debug/vc141.pdb
+Invasores/Servidor/Debug/servidor.obj
+Invasores/Servidor/Debug/Servidor.log
+Invasores/DLL/Debug/DLL.tlog/unsuccessfulbuild
+Invasores/DLL/Debug/DLL.log
+Invasores/Servidor/Debug/Servidor.tlog/unsuccessfulbuild
+Invasores/DLL/Debug/vc141.pdb
+*.idb
+*.obj
+*.tlog
+*.lastbuildstate
+*.sln
+*.filters
+*.vcxproj
+*.pdb
+*.log
+*.ilk
+*.exe
+*.lib
+*.exp
+*.dll
+*.ipch
+*.db
+>>>>>>> 4ca8e5d4341fad4240d5cfda83cffa273a8f7af8
