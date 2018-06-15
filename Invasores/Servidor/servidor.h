@@ -6,7 +6,7 @@ typedef struct {
 
 typedef struct {
 	int x, y;
-	char caracter;												// caracter que representa o tiro  por ex: '^' para defensor e '|' para invasor
+	char caracter;										// caracter que representa o tiro  por ex: '^' para defensor e '|' para invasor
 }Tiro;
 
 typedef struct {
@@ -29,6 +29,7 @@ typedef struct {
 
 typedef struct {
 	int dimX, dimY, nNavesDef, nNavesInvBasica, nNavesInvEsquiva;
+	Tiro *tbp;
 	NaveDefensora navesDefensoras[2];									//Substituir por nMaxNavesDef num futuro próximo
 	NaveInvasora navesInvasoras[12];									//Substituir por nMaxNavesInv num futuro próximo
 	HANDLE hThreadsNavesInv[4];
