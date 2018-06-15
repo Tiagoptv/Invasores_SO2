@@ -12,10 +12,6 @@ Jogo j;
 DadosCtrl cDados;
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
 
-<<<<<<< HEAD
-HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
-=======
-
 
 //Memória Partilhada
 bool iniciaMemMsg(DadosCtrl * cDados) {							// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
@@ -46,7 +42,6 @@ bool iniciaMemMsg(DadosCtrl * cDados) {							// O servidor é que mapeia a memór
 
 	return TRUE;
 }
->>>>>>> 4ca8e5d4341fad4240d5cfda83cffa273a8f7af8
 
 
 bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
@@ -83,8 +78,7 @@ void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 	SetEvent(cDados->hEventJogo);
 }
 
-<<<<<<< HEAD
-=======
+
 void WINAPI resolveMensagens() {
 	Mensagem msg;
 
@@ -96,8 +90,6 @@ void WINAPI resolveMensagens() {
 }
 
 
-
->>>>>>> 4ca8e5d4341fad4240d5cfda83cffa273a8f7af8
 Jogo setupJogo() {
 	int params[2];				//param 1 -> id  | param2 -> tipo       tipo = 1 -> Básica | (int)tipo = 2 -> Esquiva
 
@@ -263,7 +255,7 @@ void WINAPI controlaNaveInv(LPVOID params[]) {
 
 }
 ////////////////////////////////////////////////// rever e acabar a parte da remoçao do array /////////////////////////////////// 
-void gereTBP()
+void WINAPI gereTBP()
 {
 	int i, k;
 	int pos = sizeof(j.tbp) / sizeof(Tiro);					//numero de elementos
