@@ -30,14 +30,14 @@ void WINAPI trataCliente(LPVOID * hP) {
 	DWORD n;
 
 	//lê nome do cliente
-	ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
+	/*ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
 	msg.nomeEmissor[n / sizeof(TCHAR)] = '\0';
 	if (!ret || !n) {
 		_tprintf(TEXT("[ERRO] %d %d... (ReadFile)\n"), ret, n);
 		exit(-1);
-	}
+	}*/
 
-
+	WaitForSingleObject(hEventEnviaJogo, INFINITE);
 	//lê input do cliente
 	while (1) {
 		ret = ReadFile(hPipe, msg.mensagem, sizeof(TCHAR) * 24, &n, NULL);
@@ -58,16 +58,15 @@ void WINAPI recebeCliente() {
 
 	int index;
 
-	while (1) {
-		do
-		{
-			for (int i = 0; i < 6; i++) {
-				if (hPipes[i] == INVALID_HANDLE_VALUE) {
-					index = i;
-				}
+
+	do
+	{
+		for (int i = 0; i < 6; i++) {
+			if (hPipes[i] == INVALID_HANDLE_VALUE) {
+				index = i;
 			}
-		} while (index == -1);
-	}
+		}
+	} while (index == -1);
 
 	hPipeAux = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
 	if (hPipeAux == INVALID_HANDLE_VALUE) {

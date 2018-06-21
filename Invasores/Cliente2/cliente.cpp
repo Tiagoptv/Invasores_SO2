@@ -202,7 +202,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 	case WM_CREATE:
 
-		hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
+		//hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
 
 		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
 
