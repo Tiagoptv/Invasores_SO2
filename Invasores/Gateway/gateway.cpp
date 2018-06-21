@@ -114,6 +114,7 @@ void WINAPI recebeCliente() {
 	hPipesMensagem[index] = hPipeAux;
 
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeInputCliente, &hPipesMensagem[index], 0, NULL);
+
 }
 
 
@@ -126,9 +127,9 @@ void WINAPI enviaJogo() {
 		for (int i = 0; i < 6; i++)
 		{
 			leJogo(&cDados, &j);
-			if (hPipesJogo[i] == INVALID_HANDLE_VALUE) {
+			if (hPipesJogo[i] != INVALID_HANDLE_VALUE) {
 				if (!WriteFile(hPipesJogo[i], &j,sizeof(Jogo), &n, NULL)) {
-					_tprintf(TEXT("[ERRO] Escrever no pipe n.%d! (WriteFile)\n"), i);
+					_tprintf(TEXT("[ERRO] Escrever no pipe n.%d (%d)! (WriteFile)\n"), i, GetLastError());
 					exit(-1);
 				}
 			}
@@ -146,13 +147,14 @@ void WINAPI recebeInputCliente(LPVOID * hP) {
 	//Espera por evento para começar a ler as mensagens
 
 	//lê nome do cliente	| Poderá ser retirado daqui
-	ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
+	/*ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
 	msg.nomeEmissor[n / sizeof(TCHAR)] = '\0';
 	if (!ret || !n) {
 		_tprintf(TEXT("[ERRO] %d %d... (ReadFile)\n"), ret, n);
 		exit(-1);
-	}
+	}*/
 
+	//Espera pelo evento para começar a ler
 
 	//lê input do cliente
 	while (1) {
@@ -208,9 +210,9 @@ int _tmain(int argc, LPSTR argv[]) {
 	}
 
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);
-
-	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);
-
 	WaitForSingleObject(hTRecebeCliente, INFINITE);
+
+
+	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);	
 	WaitForSingleObject(hTEnviaJogo, INFINITE);
 }

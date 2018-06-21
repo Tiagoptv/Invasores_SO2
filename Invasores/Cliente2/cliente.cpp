@@ -11,10 +11,12 @@
 #define NOME_MUTEX_JOGO TEXT("MUTEX_JOGO")
 
 
-void iniciaJogo();
 void enviaInput(Mensagem m);
-void ligaPipes();
+void WINAPI ligaPipes();
 void WINAPI recebeJogo();
+
+int comecaJogo = 0;
+HANDLE hThreadLigaPipes, hThreadRecebeJogo;
 
 /* ===================================================== */
 /* Programa base (esqueleto) para aplicações Windows */
@@ -193,8 +195,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 		BOOL t, t1;
 		DWORD teste;
+		Mensagem m;
 
 	case WM_CREATE:
+		hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
+
 		// OBTEM AS DIMENSOES DO DISPLAY... 
 		bg = CreateSolidBrush(RGB(255, 0, 0));
 		nX = GetSystemMetrics(SM_CXSCREEN);
@@ -233,11 +238,31 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	case WM_KEYDOWN:
 		// CODIGO ASSOCIADO A TECLA SETA PARA A DIREITA...
 		if (wParam == VK_RIGHT) {
+			if (comecaJogo == 1) {
+				strcpy_s(m.nomeEmissor, TEXT("Ze"));
+				strcpy_s(m.mensagem, TEXT("100"));
+				enviaInput(m);
+			}
+			
 			x1++;
 			InvalidateRect(hWnd, NULL, FALSE);							//Força WM_PAINT
 		}
 		if (wParam == VK_LEFT) {
+			if (comecaJogo == 1) {
+				strcpy_s(m.nomeEmissor, TEXT("Ze"));
+				strcpy_s(m.mensagem, TEXT("97"));
+				enviaInput(m);
+			}
 			x1--;
+			InvalidateRect(hWnd, NULL, FALSE);							//Força WM_PAINT
+		}
+		if (wParam == VK_SPACE) {
+			if (comecaJogo == 1) {
+				strcpy_s(m.nomeEmissor, TEXT("Ze"));
+				strcpy_s(m.mensagem, TEXT("32"));
+				enviaInput(m);
+			}
+			x1++;
 			InvalidateRect(hWnd, NULL, FALSE);							//Força WM_PAINT
 		}
 		break;
@@ -250,11 +275,30 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			TransparentBlt(auxDC, x + (i*bmNave.bmWidth), y, bmNave.bmWidth, bmNave.bmHeight, hdcNave, 0, 0, bmNave.bmWidth, bmNave.bmHeight, RGB(0x00, 0x00, 0xFF));
 		}
 
+		//Naves invasoras
+		/*for (int i = 0; i < jogo.nNavesInvBasica; i++)
+		{
+			TransparentBlt(auxDC, jogo.navesInvasoras[i].x, jogo.navesInvasoras[i].y, bmNave.bmWidth, bmNave.bmHeight, hdcNave, 0, 0, bmNave.bmWidth, bmNave.bmHeight, RGB(0x00, 0x00, 0xFF));
+		}*/
+
+		/*for (int i = 0; i < jogo.nNavesInvEsquiva; i++)
+		{
+			TransparentBlt(auxDC, x + (i*bmNave.bmWidth), y, bmNave.bmWidth, bmNave.bmHeight, hdcNave, 0, 0, bmNave.bmWidth, bmNave.bmHeight, RGB(0x00, 0x00, 0xFF));
+		}*/
+
+		//Nave Defensora
+		//TransparentBlt(auxDC, jogo.navesDefensoras[0].x, jogo.navesDefensoras[0].y, bmNave2.bmWidth, bmNave.bmHeight, hdcNave2, 0, 0, bmNave2.bmWidth, bmNave.bmHeight, RGB(0x00, 0x00, 0xFF));
 		TransparentBlt(auxDC, x1, y1, bmNave2.bmWidth, bmNave.bmHeight, hdcNave2, 0, 0, bmNave2.bmWidth, bmNave.bmHeight, RGB(0x00, 0x00, 0xFF));
 
 		// COPIA INFORMACAO DO 'DC' EM MEMORIA PARA O DISPLAY... 
 		hdc = BeginPaint(hWnd, &ps);
 		BitBlt(hdc, 0, 0, nX, nY, auxDC, 0, 0, SRCCOPY);
+		//Tiros
+		/*for (int i = 0; jogo.tbp[i].x != -1 ; i++)
+		{
+		Rectangle(hdc, jogo.tbp[i].x, jogo.tbp[i].y, jogo.tbp[i].x+5, jogo.tbp[i].y+5);
+
+		}*/
 		EndPaint(hWnd, &ps);
 
 		break;
@@ -265,7 +309,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		{
 
 		case ID_JOGO_JOGAR:
-			iniciaJogo();
+			hThreadRecebeJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeJogo, NULL, 0, NULL);
+			comecaJogo = 1;
 			break;
 
 		case ID_JOGO_SAIR:
@@ -303,17 +348,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	return(0);
 }
 
-void iniciaJogo() {
-	HANDLE hThreadRecebeJogo;
 
-	ligaPipes();
-
-	hThreadRecebeJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeJogo, NULL, 0, NULL);
-
-	WaitForSingleObject(hThreadRecebeJogo, INFINITE);
-}
-
-void ligaPipes() {
+void WINAPI ligaPipes() {
 
 	//Liga Pipe Jogo
 	//Espera pelo pipe
@@ -343,10 +379,6 @@ void ligaPipes() {
 }
 
 
-void loadBitMaps() {
-	hNaveInv1 = (HBITMAP)LoadImageW(NULL, L"bitmap3.bmp",IMAGE_BITMAP,0,0, LR_LOADFROMFILE);
-}
-
 void WINAPI recebeJogo() {
 	DWORD n;
 	BOOL ret;
@@ -363,6 +395,7 @@ void WINAPI recebeJogo() {
 		WaitForSingleObject(hMutexJogo, INFINITE);
 		ret = ReadFile(hPipeJogo, &jogo, sizeof(Jogo), &n, NULL);
 		if (!ret || !n) {
+			n = GetLastError();
 			_tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, n);	//Remover depois de testar
 			break;
 		}
