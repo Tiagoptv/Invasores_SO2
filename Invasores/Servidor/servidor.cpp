@@ -353,7 +353,7 @@ void WINAPI readConsoleInput() {
 		//falta set on cliente
 		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
 		WaitForSingleObject(hEventEnviaJogo, INFINITE);
-
+		CloseHandle(hEventEnviaJogo);
 		leMsg(&cDados, &msg);
 
 		//se uma tecla é premida...

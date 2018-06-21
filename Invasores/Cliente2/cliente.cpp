@@ -16,6 +16,8 @@ void enviaInput(Mensagem m);
 void ligaPipes();
 void WINAPI recebeJogo();
 
+HANDLE hEventEnviaJogo;
+
 /* ===================================================== */
 /* Programa base (esqueleto) para aplicações Windows */
 /* ===================================================== */
@@ -195,6 +197,9 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		DWORD teste;
 
 	case WM_CREATE:
+
+		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
+
 		// OBTEM AS DIMENSOES DO DISPLAY... 
 		bg = CreateSolidBrush(RGB(255, 0, 0));
 		nX = GetSystemMetrics(SM_CXSCREEN);
@@ -266,7 +271,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 		case ID_JOGO_JOGAR:
 			iniciaJogo();
-			break;
+			SetEvent(hEventEnviaJogo);
+			break;	
 
 		case ID_JOGO_SAIR:
 			PostQuitMessage(0);
