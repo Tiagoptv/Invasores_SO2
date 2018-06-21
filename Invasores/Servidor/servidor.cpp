@@ -356,33 +356,29 @@ void WINAPI readConsoleInput() {
 		CloseHandle(hEventEnviaJogo);
 		leMsg(&cDados, &msg);
 
-		//se uma tecla é premida...
-		if (_kbhit()) {
-
-			ch = _getch();
+		ch = _tstoi(msg.mensagem);
 	
-			//move left
-			if (ch == 97) {
-				j.navesDefensoras[0].x -= 1;				//mudar para Defensora
-			}
-			//move right
-			if (ch == 100) {
-				j.navesDefensoras[0].x += 1;
-			}
-			//fire
-			if (ch == 32) {
+		//move left
+		if (ch == 97) {
+			j.navesDefensoras[0].x -= 1;				//mudar para Defensora
+		}
+		//move right
+		if (ch == 100) {
+			j.navesDefensoras[0].x += 1;
+		}
+		//fire
+		if (ch == 32) {
 				
- 				for (int i = 0; i < 50; i++) {
-					//posição livre
-					if (j.tbp[i].x == -1) {							
-						j.tbp[i].x = j.navesDefensoras[0].x;
-						j.tbp[i].y = j.navesDefensoras[0].y - 1;
-						j.tbp[i].caracter = '^';
-						break;
-					}
+ 			for (int i = 0; i < 50; i++) {
+				//posição livre
+				if (j.tbp[i].x == -1) {							
+					j.tbp[i].x = j.navesDefensoras[0].x;
+					j.tbp[i].y = j.navesDefensoras[0].y - 1;
+					j.tbp[i].caracter = '^';
+					break;
 				}
-				gereTBP();
 			}
+			gereTBP();
 		}
 	}
 }

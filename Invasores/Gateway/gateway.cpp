@@ -7,7 +7,7 @@
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 
-HANDLE hPipes[6], hEventEnviaJogo;
+HANDLE hPipes[6], hPipesJogo[6],hEventEnviaJogo;
 DadosCtrl cDados;
 
 void leJogo(DadosCtrl * cDados, Jogo * jogo) {
@@ -82,12 +82,8 @@ void WINAPI recebeCliente() {
 
 	hPipes[index] = hPipeAux;
 
-<<<<<<< HEAD
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeInputCliente, &hPipesMensagem[index], 0, NULL);
-
-=======
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)trataCliente, &hPipes[index], 0, NULL);
->>>>>>> 580a78351142ef541ddc5fd6be15d0c1649f65e9
+
 }
 
 
@@ -100,43 +96,15 @@ void WINAPI enviaJogo() {
 		for (int i = 0; i < 6; i++)
 		{
 			leJogo(&cDados, &j);
-<<<<<<< HEAD
+
 			if (hPipesJogo[i] != INVALID_HANDLE_VALUE) {
 				if (!WriteFile(hPipesJogo[i], &j,sizeof(Jogo), &n, NULL)) {
 					_tprintf(TEXT("[ERRO] Escrever no pipe n.%d (%d)! (WriteFile)\n"), i, GetLastError());
-=======
-			if (hPipes[i] == INVALID_HANDLE_VALUE) {
-				if (!WriteFile(hPipes[i], &j,sizeof(Jogo), &n, NULL)) {
-					_tprintf(TEXT("[ERRO] Escrever no pipe n.%d! (WriteFile)\n"), i);
->>>>>>> 580a78351142ef541ddc5fd6be15d0c1649f65e9
 					exit(-1);
 				}
 			}
 		}
 	}
-<<<<<<< HEAD
-}
-
-void WINAPI recebeInputCliente(LPVOID * hP) {
-	DWORD n;
-	BOOL ret;
-	HANDLE hPipe = (HANDLE)hP;
-	Mensagem msg;
-	TCHAR buf[24];
-
-	//Espera por evento para começar a ler as mensagens
-
-	//lê nome do cliente	| Poderá ser retirado daqui
-	/*ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
-	msg.nomeEmissor[n / sizeof(TCHAR)] = '\0';
-	if (!ret || !n) {
-		_tprintf(TEXT("[ERRO] %d %d... (ReadFile)\n"), ret, n);
-		exit(-1);
-	}*/
-
-	//Espera pelo evento para começar a ler
-=======
->>>>>>> 580a78351142ef541ddc5fd6be15d0c1649f65e9
 
 }
 
@@ -178,11 +146,9 @@ int _tmain(int argc, LPSTR argv[]) {
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);
 	WaitForSingleObject(hTRecebeCliente, INFINITE);
 
-<<<<<<< HEAD
-
 	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);	
 	WaitForSingleObject(hTEnviaJogo, INFINITE);
-=======
+
 	hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
 	if (hEventEnviaJogo == NULL) {
 		_tprintf(TEXT("Erro ao abrir evento! (%d)"), GetLastError());
@@ -191,7 +157,4 @@ int _tmain(int argc, LPSTR argv[]) {
 	
 	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);
 
-
-	
->>>>>>> 580a78351142ef541ddc5fd6be15d0c1649f65e9
 }
