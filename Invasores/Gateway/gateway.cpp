@@ -109,7 +109,7 @@ void WINAPI enviaJogo() {
 
 int _tmain(int argc, LPSTR argv[]) {
 
-	HANDLE hTRecebeCliente, hTEnviaJogo, hTrataCliente[6];
+	HANDLE hTRecebeCliente, hTEnviaJogo, hTrataCliente[6], hEventEnviaJogo;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -143,7 +143,14 @@ int _tmain(int argc, LPSTR argv[]) {
 
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);
 
+	hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
+	if (hEventEnviaJogo == NULL) {
+		_tprintf(TEXT("Erro ao abrir evento! (%d)"), GetLastError());
+		return 0;
+	}
+	
 	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);
+
 
 	
 }

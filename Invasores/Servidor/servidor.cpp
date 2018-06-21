@@ -482,7 +482,7 @@ int main() {
 		colisaoTBP();
 		imprimeCenas();
 		fimJogo();
-		escreveJogo(&cDados, &j);
+		//escreveJogo(&cDados, &j);
 	/*	gotoxy(100, 1);
 		_tprintf(TEXT("%i "), i);
 		i++;*/
