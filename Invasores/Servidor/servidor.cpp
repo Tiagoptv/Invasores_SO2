@@ -12,6 +12,7 @@ void gotoxy(int x, int y);
 Jogo j;
 DadosCtrl cDados;
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
+HANDLE hEventEnviaJogo;
 
 
 //Memória Partilhada
@@ -349,6 +350,10 @@ void WINAPI readConsoleInput() {
 
 	while (j.comecaJogo) {
 
+		//falta set on cliente
+		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
+		WaitForSingleObject(hEventEnviaJogo, INFINITE);
+		CloseHandle(hEventEnviaJogo);
 		leMsg(&cDados, &msg);
 
 		//se uma tecla é premida...
@@ -465,7 +470,7 @@ int main() {
 
 	iniciaMemJogo(&cDados);
 	iniciaMemMsg(&cDados);
-	//Sleep(6000);
+
 	// conectar jogadores
 	// setup jogo
 	// Ciclo de jogo (flag começaJogo)
@@ -482,7 +487,7 @@ int main() {
 		colisaoTBP();
 		imprimeCenas();
 		fimJogo();
-		escreveJogo(&cDados, &j);
+		//escreveJogo(&cDados, &j);
 	/*	gotoxy(100, 1);
 		_tprintf(TEXT("%i "), i);
 		i++;*/

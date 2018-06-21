@@ -15,8 +15,11 @@ void enviaInput(Mensagem m);
 void WINAPI ligaPipes();
 void WINAPI recebeJogo();
 
+
 int comecaJogo = 0;
 HANDLE hThreadLigaPipes, hThreadRecebeJogo;
+HANDLE hEventEnviaJogo;
+
 
 /* ===================================================== */
 /* Programa base (esqueleto) para aplicações Windows */
@@ -198,7 +201,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		Mensagem m;
 
 	case WM_CREATE:
+
 		hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
+
+		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
+
 
 		// OBTEM AS DIMENSOES DO DISPLAY... 
 		bg = CreateSolidBrush(RGB(255, 0, 0));
@@ -309,9 +316,13 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		{
 
 		case ID_JOGO_JOGAR:
+
 			hThreadRecebeJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeJogo, NULL, 0, NULL);
 			comecaJogo = 1;
-			break;
+
+			SetEvent(hEventEnviaJogo);
+			break;	
+
 
 		case ID_JOGO_SAIR:
 			PostQuitMessage(0);
