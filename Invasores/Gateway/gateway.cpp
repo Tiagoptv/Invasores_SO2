@@ -53,6 +53,7 @@ void WINAPI trataCliente(LPVOID * hP) {
 		}
 
 		escreveMsg(&cDados, &msg);
+
 	}
 }
 */
@@ -209,4 +210,7 @@ int _tmain(int argc, LPSTR argv[]) {
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);
 
 	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);
+
+	WaitForSingleObject(hTRecebeCliente, INFINITE);
+	WaitForSingleObject(hTEnviaJogo, INFINITE);
 }

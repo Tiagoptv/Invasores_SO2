@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <tchar.h>
 #include <time.h>
+#include <conio.h>
 #include "..\DLL\dll.h"
 #include "servidor.h"
 
@@ -43,7 +44,6 @@ bool iniciaMemMsg(DadosCtrl * cDados) {							// O servidor é que mapeia a memór
 	return TRUE;
 }
 
-
 bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memória e cria o mutex. O cliente vai abrir a zona de memória e mutex posteriormente
 
 	cDados->hMapFileJogo = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(Jogo), NOME_FM_JOGO);
@@ -64,13 +64,19 @@ bool iniciaMemJogo(DadosCtrl * cDados) {						// O servidor é que mapeia a memór
 		return FALSE;
 	}
 
+	cDados->jogoPartilhado = (Jogo*)MapViewOfFile(cDados->hMapFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Jogo));
+	if (cDados->jogoPartilhado == NULL) {
+		_tprintf(TEXT("Erro ao criar view da memoria!"));
+		return 0;
+	}
+
 	return TRUE;
 }
 
 void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 
 	WaitForSingleObject(cDados->hMutexJogo, INFINITE);
-	//cDados->jogoPartilhado = jogo;
+	cDados->jogoPartilhado = jogo;
 	CopyMemory(cDados->jogoPartilhado, jogo, sizeof(Jogo));
 	ReleaseMutex(cDados->hMutexJogo);
 
@@ -78,33 +84,19 @@ void escreveJogo(DadosCtrl * cDados, Jogo * jogo) {
 	SetEvent(cDados->hEventJogo);
 }
 
-
-void WINAPI resolveMensagens() {
-	Mensagem msg;
-
-	while (1) {
-		leMsg(&cDados, &msg);
-
-		//lógica de jogo
-	}
-}
-
-
 Jogo setupJogo() {
 	int params[2];				//param 1 -> id  | param2 -> tipo       tipo = 1 -> Básica | (int)tipo = 2 -> Esquiva
 
-	//Jogo j;
 	j.dimX = 100;
 	j.dimY = 100;
-	j.nNavesInvBasica = 2;
-	j.nNavesInvEsquiva = 2;
-	j.tbp = (Tiro *)malloc(1);				//1 byte apenas para fazer uma divisao inteira depois e dar 0
-
-	//verificação do malloc
-	if (j.tbp == NULL) {																								
-		//fprintf(stderr, "malloc failed\n");
-		_tprintf(TEXT("malloc failed"));
-		return(j);
+	j.nNavesInvBasica = 5;
+	j.nNavesInvEsquiva = 5;
+	
+	//inicialização tbp
+	for (int i = 0; i < 50; i++) {
+		j.tbp[i].x = -1;
+		j.tbp[i].y = -1;
+		j.tbp[i].caracter = ' ';
 	}
 
 	//lançar threads que vão controlar as naves invasores basicas
@@ -112,7 +104,7 @@ Jogo setupJogo() {
 		params[0] = i;
 		params[1] = 1;
 		j.hThreadsNavesInv[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)controlaNaveInv, (LPVOID)params, 0, NULL);
-		Sleep(500);
+		Sleep(20);
 	}
 	
 	//lançar threads que vão controlar as naves invasores esquiva
@@ -120,176 +112,21 @@ Jogo setupJogo() {
 		params[0] = j.nNavesInvBasica + i;
 		params[1] = 2;
 		j.hThreadsNavesInv[j.nNavesInvBasica+i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)controlaNaveInv, (LPVOID)params, 0, NULL);
-		Sleep(500);
+		Sleep(20);
 	}
+
+	j.navesDefensoras[0].caracter = 'H';
+	j.navesDefensoras[0].imune = FALSE;
+	j.navesDefensoras[0].teclasInvertidas = FALSE;
+	j.navesDefensoras[0].x = 15;
+	j.navesDefensoras[0].y = 10;
+	j.navesDefensoras[0].vida = 10;
+	j.navesDefensoras[0].velMovimento = 10;		//conferir
+	j.navesDefensoras[0].taxaDisparo = 10;
 	
+	j.comecaJogo = 1;
+
 	return j;
-}
-
-void WINAPI controlaNaveInv(LPVOID params[]) {
-	//lógica relativa ao controlo da nave invasora
-
-	int nMovs = 0;					//Contador de movimentos p/ taxa de disparo
-	
-	NaveInvasora naveInv;
-
-	//posicao das naves invasoras
-	naveInv.x = 3 + (int)params[0];
-	naveInv.y = 3;
-	
-	if (naveInv.x > 13 && naveInv.x <= 23) {
-		naveInv.x -= 10;
-		naveInv.y++;
-	}
-	if (naveInv.x > 23 && naveInv.x <= 33) {
-		naveInv.x -= 20;
-		naveInv.y+=2;
-	}
-	if (naveInv.x > 33 && naveInv.x <= 43) {
-		naveInv.x -= 30;
-		naveInv.y+=3;
-	}
-	if (naveInv.x > 43 && naveInv.x <= 53) {
-		naveInv.x -= 40;
-		naveInv.y+=4;
-	}
-
-	//caracteristicas especificas do tipo de nave
-	if ((int)params[1] == 1)
-	{
-		naveInv.vida = 1;
-		naveInv.taxaDisparo = 10;
-		naveInv.velMovimento = 10;				//ver e modificar como pede no enunciado mais tarde
-		naveInv.direcao = 'd';
-		naveInv.caracter = '@';
-		// falta powerups e bombas
-	}
-	if ((int)params[1] == 2)
-	{
-		naveInv.vida = 3;
-		naveInv.taxaDisparo = 16;
-		naveInv.velMovimento = 11;				//ver e modificar como pede no enunciado mais tarde
-		naveInv.direcao = 'd';
-		naveInv.caracter = '#';
-		// falta powerups e bombas	
-	}
-
-	//mover invasor
-	if (naveInv.direcao = 'd') {
-		naveInv.x += naveInv.velMovimento;
-		
-		//limite lateral
-		if (naveInv.x >= j.dimX) {							
-			naveInv.x = j.dimX;
-			naveInv.y++;
-			naveInv.direcao = 'e';
-		}
-		//limite de baixo
-		if (naveInv.y >= j.dimY) {
-			naveInv.y = 3;
-			naveInv.x = 3 + (int)params[0];
-			naveInv.direcao = 'e';
-		}
-	}
-	if (naveInv.direcao = 'e') {
-		naveInv.x -= naveInv.velMovimento;
-		
-		//limite lateral
-		if (naveInv.x <= 3 || naveInv.x == 3 + (int)params[0]) {					//adicionar uma função para trocar a direçao
-			naveInv.x = 3 + (int)params[0];											// de todas as naves, para se mexerem em bloco
-			naveInv.y++;
-			naveInv.direcao = 'd';
-		}
-		//limite de baixo
-		if (naveInv.y >= j.dimY) {
-			naveInv.y = 3;
-			naveInv.x = 3 + (int)params[0];
-			naveInv.direcao = 'e';
-		}
-	}
-	++nMovs;
-
-	//ver se dispara
-	if (nMovs == naveInv.taxaDisparo) {
-		nMovs = 0;
-		
-		int pos = sizeof(j.tbp) / sizeof(Tiro);				//numero de elementos; confirmar se temos o resultado esperado
-		
-		j.tbp = (Tiro*)realloc(j.tbp, (pos+1)*sizeof(Tiro));
-
-		j.tbp[pos].x = naveInv.x;
-		j.tbp[pos].x = naveInv.x;
-		j.tbp[pos].caracter = '|';		
-		
-		gereTBP();
-	}
-
-	//Código apenas para teste do lançamento das threads e teste da memória partilhada
-	/*int nMax = 1000;
-	int x, y;
-	int id = (int)params[0];
-	
-	x = 0;
-	y = id + 6;
-
-	for ( int i = 0; i < nMax; i++)	{
-		WaitForSingleObject(hMutexJogo, INFINITE);
-		gotoxy(x,y);
-		_tprintf(TEXT("Id: %d  n= %d"), id, i);
-		ReleaseMutex(hMutexJogo);
-		Sleep(25);
-	}
-
-	DadosCtrl cDados;
-	//Jogo j;
-
-	cDados.hMapFileJogo = OpenFileMapping(FILE_MAP_READ, FALSE, NOME_FM_JOGO);
-	cDados.hMutexJogo = OpenMutex(SYNCHRONIZE, FALSE, NOME_MUTEX_JOGO_MEM);
-
-	WaitForSingleObject(cDados.hMutexJogo,INFINITE);
-	ReleaseMutex(cDados.hMutexJogo);
-
-
-	CloseHandle(cDados.hMutexJogo);
-	UnmapViewOfFile(cDados.hMapFileJogo);*/
-
-}
-////////////////////////////////////////////////// rever e acabar a parte da remoçao do array /////////////////////////////////// 
-void WINAPI gereTBP()
-{
-	int i, k;
-	int pos = sizeof(j.tbp) / sizeof(Tiro);					//numero de elementos
-
-	for (i = 0; i > pos; i++) {
-	
-		//bomba dos invasores
-		if(j.tbp[i].caracter == '|')		
-		{
-			if (j.tbp[i].y >= j.dimY)								//se ultrapassou o limite inferior
-			{
-				for (k = i; k > pos; k++) {							// percorre o array de i para a frente
-					j.tbp[k] = j.tbp[k + 1];						// remover o tiro
-				}
-				j.tbp = (Tiro*)realloc(j.tbp, (pos - 1) * sizeof(Tiro));
-			}		//passar tudo pra casa anterior e realocar o array
-			
-			j.tbp[i].y++;
-		}
-
-		//tiro dos defensores
-		if (j.tbp[i].caracter == '^')		
-		{
-			//codigo para quando sai dos limites superiores
-			j.tbp[i].y--;
-		}
-
-		//powerups
-		if (j.tbp[i].caracter == '*')		//bomba dos invasores
-		{
-			//codigo para quando sai dos limites inferiores
-			j.tbp[i].y++;
-		}
-	}
 }
 
 void gotoxy(int x, int y) {
@@ -302,60 +139,355 @@ void gotoxy(int x, int y) {
 	SetConsoleCursorPosition(hStdout, coord);
 }
 
-// função apenas para teste
-// apagar depois de testar
-void WINAPI testeMem() {
-	DadosCtrl cDados;
-	Jogo j;
+//tem o limite de naves e tbp estático, mudar para uma global caso seja necessário
+void imprimeCenas() {
+	
+	int x, y, i;
 
-	cDados.hMapFileJogo = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, NOME_FM_JOGO);
-	if (cDados.hMapFileJogo == NULL) {
-		_tprintf(TEXT("Erro ao abrir memoria mapeada!"));
+	//Naves Invasoras
+	for (i = 0; i < 50; i++) {
+		x = j.navesInvasoras[i].x;
+		y = j.navesInvasoras[i].y;
+
+		gotoxy(x,y);
+
+		_tprintf(TEXT("%c "), j.navesInvasoras[i].caracter);
+	}
+
+	//Naves Defensoras
+	for (i = 0; i < 2; i++) {
+		x = j.navesDefensoras[i].x;
+		y = j.navesDefensoras[i].y;
+
+		gotoxy(x, y);
+
+		_tprintf(TEXT("%c "), j.navesDefensoras[i].caracter);
+	}
+
+	//TBP
+	for (i = 0; i < 50; i++) {									///////////////////////////////////////// está a dar zero!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+		gotoxy(j.tbp[i].x, j.tbp[i].y);
+
+		_tprintf(TEXT("%c "), j.tbp[i].caracter);
+	}
+}
+
+void moverInvasor(int id) {
+
+	Sleep(1000);
+
+	if (j.navesInvasoras[id].direcao = 'd') {
+		j.navesInvasoras[id].x += 1; //j.navesInvasoras[id].velMovimento;
+
+		//limite lateral
+		if (j.navesInvasoras[id].x >= j.dimX) {
+			j.navesInvasoras[id].x = j.dimX;
+			j.navesInvasoras[id].y++;
+			j.navesInvasoras[id].direcao = 'e';
+		}
+		//limite de baixo
+		if (j.navesInvasoras[id].y >= j.dimY) {
+			j.navesInvasoras[id].y = 3;
+			j.navesInvasoras[id].x = 3 + id;
+			j.navesInvasoras[id].direcao = 'e';
+		}
+	}
+	if (j.navesInvasoras[id].direcao = 'e') {
+		j.navesInvasoras[id].x -= 1; //j.navesInvasoras[id].velMovimento;
+
+		//limite lateral
+		if (j.navesInvasoras[id].x <= 3 || j.navesInvasoras[id].x == 3 + id) {					//adicionar uma função para trocar a direçao
+			j.navesInvasoras[id].x = 3 + id;											// de todas as naves, para se mexerem em bloco
+			j.navesInvasoras[id].y++;
+			j.navesInvasoras[id].direcao = 'd';
+		}
+		//limite de baixo
+		if (j.navesInvasoras[id].y >= j.dimY) {
+			j.navesInvasoras[id].y = 3;
+			j.navesInvasoras[id].x = 3 + id;
+			j.navesInvasoras[id].direcao = 'e';
+		}
+	}
+
+	j.navesInvasoras[id].nMovs++;
+
+
+}
+
+void WINAPI controlaNaveInv(LPVOID params[]) {
+	//lógica relativa ao controlo da nave invasora
+		
+	int id = (int)params[0];
+	
+	//posicao das naves invasoras
+	j.navesInvasoras[id].x = 3 + id;
+	j.navesInvasoras[id].y = 3;
+	j.navesInvasoras[id].nMovs = 0;
+	
+	if (j.navesInvasoras[id].x > 13 && j.navesInvasoras[id].x <= 23) {
+		j.navesInvasoras[id].x -= 10;
+		j.navesInvasoras[id].y++;
+	}
+	if (j.navesInvasoras[id].x > 23 && j.navesInvasoras[id].x <= 33) {
+		j.navesInvasoras[id].x -= 20;
+		j.navesInvasoras[id].y+=2;
+	}
+	if (j.navesInvasoras[id].x > 33 && j.navesInvasoras[id].x <= 43) {
+		j.navesInvasoras[id].x -= 30;
+		j.navesInvasoras[id].y+=3;
+	}
+	if (j.navesInvasoras[id].x > 43 && j.navesInvasoras[id].x <= 53) {
+		j.navesInvasoras[id].x -= 40;
+		j.navesInvasoras[id].y+=4;
+	}
+
+	//caracteristicas especificas do tipo de nave
+	if ((int)params[1] == 1)
+	{
+		j.navesInvasoras[id].vida = 1;
+		j.navesInvasoras[id].taxaDisparo = 10;
+		j.navesInvasoras[id].velMovimento = 10;				//ver e modificar como pede no enunciado mais tarde
+		j.navesInvasoras[id].direcao = 'd';
+		j.navesInvasoras[id].caracter = '@';
+		// falta powerups e bombas
+	}
+	if ((int)params[1] == 2)
+	{
+		j.navesInvasoras[id].vida = 3;
+		j.navesInvasoras[id].taxaDisparo = 16;
+		j.navesInvasoras[id].velMovimento = 11;				//ver e modificar como pede no enunciado mais tarde
+		j.navesInvasoras[id].direcao = 'd';
+		j.navesInvasoras[id].caracter = '#';
+		// falta powerups e bombas	
+	}
+
+	//mover invasor
+	moverInvasor(id);
+
+	//ver se dispara
+	if (j.navesInvasoras[id].nMovs == j.navesInvasoras[id].taxaDisparo) {
+		j.navesInvasoras[id].nMovs = 0;
+
+		for (int i = 0; i < 50; i++) {
+			if(j.tbp[i].x == -1) {							//posição livre
+				j.tbp[i].x = j.navesInvasoras[id].x;
+				j.tbp[i].y = j.navesInvasoras[id].y + 1;
+				j.tbp[i].caracter = '|';
+			}
+		}
+		
+		gereTBP();
+	}
+
+}
+
+// falta remover em caso de colisao com adversário ou jogador					e fazer while jogoComecou com sleep
+void WINAPI gereTBP()
+{
+	int i, k;
+
+	while (j.comecaJogo) {
+
+		for (i = 0; i < 50; i++) {
+
+			//if (j.tbp[i].x != -1) {
+
+				//bomba dos invasores
+				if (j.tbp[i].caracter == '|')
+				{
+					//if ultrapassou o limite inferior
+					if (j.tbp[i].y >= j.dimY)
+					{
+						j.tbp[i].x = -1;
+						j.tbp[i].y = -1;
+						j.tbp[i].caracter = ' ';
+					}
+					//else
+					j.tbp[i].y++;
+				}
+
+				//tiro dos defensores
+				if (j.tbp[i].caracter == '^')
+				{
+					//ultrapassou os limites superiores
+					if (j.tbp[i].y < 4)
+					{
+						j.tbp[i].x = -1;
+						j.tbp[i].y = -1;
+						j.tbp[i].caracter = ' ';
+					}
+					else
+						j.tbp[i].y--;
+				}
+
+				//powerups
+				if (j.tbp[i].caracter == '*')		//bomba dos invasores
+				{
+					//if ultrapassou o limite inferior
+					if (j.tbp[i].y >= j.dimY)
+					{
+						j.tbp[i].x = -1;
+						j.tbp[i].y = -1;
+						j.tbp[i].caracter = ' ';
+					}
+					//else
+					j.tbp[i].y++;
+				}
+			//}
+		}
+		Sleep(500);
+	}
+}
+
+// Associar à naveDefensora
+void WINAPI readConsoleInput() {
+
+	Mensagem msg;
+
+	int ch;		
+
+	while (j.comecaJogo) {
+
+		leMsg(&cDados, &msg);
+
+		//se uma tecla é premida...
+		if (_kbhit()) {
+
+			ch = _getch();
+	
+			//move left
+			if (ch == 97) {
+				j.navesDefensoras[0].x -= 1;				//mudar para Defensora
+			}
+			//move right
+			if (ch == 100) {
+				j.navesDefensoras[0].x += 1;
+			}
+			//fire
+			if (ch == 32) {
+				
+ 				for (int i = 0; i < 50; i++) {
+					//posição livre
+					if (j.tbp[i].x == -1) {							
+						j.tbp[i].x = j.navesDefensoras[0].x;
+						j.tbp[i].y = j.navesDefensoras[0].y - 1;
+						j.tbp[i].caracter = '^';
+						break;
+					}
+				}
+				gereTBP();
+			}
+		}
+	}
+}
+
+//nao tem em conta imunidades
+//colisoes com powerups nao implementadas
+void colisaoTBP() {
+
+	int i, k;
+
+	//Naves Invasoras
+	for(i = 0; i < 50; i++)
+		for(k = 0; k < 50; k++)
+			if (j.navesInvasoras[i].caracter != ' ' && 
+				j.navesInvasoras[i].x == j.tbp[k].x &&
+				j.navesInvasoras[i].y == j.tbp[k].y) {
+				
+				//remove tiro do vetor
+				j.tbp[k].x = -1;
+				j.tbp[k].y = -1;
+				j.tbp[k].caracter = ' ';
+
+				//retira uma vida
+				j.navesInvasoras[i].vida--;
+
+				//if (sem vidas) -> morre
+				if (j.navesInvasoras[i].vida < 1) {
+					j.navesInvasoras[k].x = 0;
+					j.navesInvasoras[k].y = 0;
+					j.navesInvasoras[k].caracter = ' ';
+				}
+			}
+
+	//Naves defensoras
+	for (k = 0; k < 2; k++)
+		for (i = 0; i < 50; i++)
+			if (j.navesDefensoras[k].caracter != ' ' &&
+				j.navesDefensoras[k].x == j.tbp[i].x &&
+				j.navesDefensoras[k].y == j.tbp[i].y) {
+
+				//remove tiro do vetor
+				j.tbp[i].x = -1;
+				j.tbp[i].y = -1;
+				j.tbp[i].caracter = ' ';
+
+				//retira uma vida
+				j.navesDefensoras[k].vida--;
+
+				//if (sem vidas) -> morre
+				if (j.navesDefensoras[k].vida < 1)
+					j.navesDefensoras[k].caracter = ' ';
+					
+			}
+
+}
+
+// nº de invasores fixo
+void fimJogo() {
+
+	int i,k;
+
+	if (j.navesDefensoras[0].vida == 0) {
+		j.comecaJogo = 0;
 		return;
 	}
 
-	cDados.jogoPartilhado = (Jogo*)MapViewOfFile(cDados.hMapFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Jogo));
-	if (cDados.jogoPartilhado == NULL) {
-		_tprintf(TEXT("Erro ao abrir vista do jogo partilhado!"));
-		return;
-	}
+	k = 0;
 
-	//leJogo(&cDados, &j);
+	for (i = 0; i < 50; i++)
+		if (j.navesInvasoras[i].x == 0 && j.navesInvasoras[i].y == 0)
+			k++;
+		else
+			break;
 
-	return;
+	if (k == 50)
+		j.comecaJogo = 0;
 }
 
 int main() {
-
-	HANDLE hThreadTiros;
+	
+	j.comecaJogo = 0;
+	HANDLE hThreadTiros, hThreadPlayerMov;
 	srand(time(NULL));
 	j = setupJogo();
-	hMutexJogo = CreateMutex(NULL, FALSE, TEXT("MutexJogo"));
-
 
 	iniciaMemJogo(&cDados);
-
-	cDados.jogoPartilhado = (Jogo*)MapViewOfFile(cDados.hMapFileJogo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(Jogo));
-	if (cDados.jogoPartilhado == NULL) {
-		_tprintf(TEXT("Erro ao criar view da memoria!"));
-		return 0;
-	}
-
-	hThreadTiros = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)gereTBP, NULL, 0, NULL);
-	
-
+	iniciaMemMsg(&cDados);
+	//Sleep(6000);
 	// conectar jogadores
 	// setup jogo
-	// Ciclo de jogo
+	// Ciclo de jogo (flag começaJogo)
+		// "ativar" thread ler teclas
 	// condiçoes de paragem
 
 	//free's e close's
+	hThreadPlayerMov = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)readConsoleInput, NULL, 0, NULL);
+	hThreadTiros = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)gereTBP, NULL, 0, NULL);
 
+	int i = 0;
+  	while (j.comecaJogo) {
 
-	escreveJogo(&cDados, &j);
-
-	j.hThreadsNavesInv[4] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)testeMem, NULL, 0, NULL);
-
+		colisaoTBP();
+		imprimeCenas();
+		fimJogo();
+		escreveJogo(&cDados, &j);
+	/*	gotoxy(100, 1);
+		_tprintf(TEXT("%i "), i);
+		i++;*/
+		//Sleep(200);
+	}
 
 	WaitForMultipleObjects(4, j.hThreadsNavesInv, TRUE, INFINITE);
 
@@ -363,8 +495,8 @@ int main() {
 		CloseHandle(j.hThreadsNavesInv[i]);
 	}
 
-	free(j.tbp);
 	CloseHandle(hThreadTiros);
+	CloseHandle(hThreadPlayerMov);
 	CloseHandle(cDados.hMutexJogo);
 	CloseHandle(cDados.hEventJogo);
 	UnmapViewOfFile(cDados.hMapFileJogo);
