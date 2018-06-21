@@ -5,9 +5,13 @@
 #include <fcntl.h>
 #include "..\DLL\dll.h"
 
-#define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
+#define PIPE_JOGO TEXT("\\\\.\\pipe\\jogo")
+#define PIPE_MENSAGEM TEXT("\\\\.\\pipe\\mensagem")
+#define PIPE_CONFIG TEXT("\\\\.\\pipe\\config")
 
-HANDLE hPipes[6];
+void WINAPI recebeInputCliente(LPVOID * hP);
+
+HANDLE hPipesJogo[6], hPipesMensagem[6];
 DadosCtrl cDados;
 
 void leJogo(DadosCtrl * cDados, Jogo * jogo) {
@@ -19,6 +23,7 @@ void leJogo(DadosCtrl * cDados, Jogo * jogo) {
 	ReleaseMutex(cDados->hMutexJogo);
 }
 
+/*
 void WINAPI trataCliente(LPVOID * hP) {
 
 	HANDLE hPipe = (HANDLE)hP;
@@ -50,27 +55,28 @@ void WINAPI trataCliente(LPVOID * hP) {
 		escreveMsg(&cDados, &msg);
 	}
 }
-
+*/
 
 void WINAPI recebeCliente() {
 	HANDLE hPipeAux;
 
-	int index;
+	int index = -1;
 
-	while (1) {
-		do
-		{
-			for (int i = 0; i < 6; i++) {
-				if (hPipes[i] == INVALID_HANDLE_VALUE) {
-					index = i;
-				}
+
+	//Pipe Jogo
+	do
+	{
+		for (int i = 0; i < 6; i++) {
+			if (hPipesJogo[i] == INVALID_HANDLE_VALUE) {
+				index = i;
 			}
-		} while (index == -1);
-	}
+		}
+	} while (index == -1);
 
-	hPipeAux = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
+
+	hPipeAux = CreateNamedPipe(PIPE_JOGO, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
 	if (hPipeAux == INVALID_HANDLE_VALUE) {
-		_tprintf(TEXT("[ERRO] Criar Named Pipe! (CreateNamedPipe)"));
+		_tprintf(TEXT("[ERRO] Criar Named Pipe Jogo! (CreateNamedPipe)"));
 		exit(-1);
 	}
 
@@ -79,9 +85,34 @@ void WINAPI recebeCliente() {
 		exit(-1);
 	}
 
-	hPipes[index] = hPipeAux;
+	hPipesJogo[index] = hPipeAux;
 
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)trataCliente, &hPipes[index], 0, NULL);
+	//Pipe Mensagens
+	index = -1;
+
+	do
+	{
+		for (int i = 0; i < 6; i++) {
+			if (hPipesMensagem[i] == INVALID_HANDLE_VALUE) {
+				index = i;
+			}
+		}
+	} while (index == -1);
+
+	hPipeAux = CreateNamedPipe(PIPE_MENSAGEM, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Mensagem), sizeof(Mensagem), 1000, NULL);
+	if (hPipeAux == INVALID_HANDLE_VALUE) {
+		_tprintf(TEXT("[ERRO] Criar Named Pipe Mensagem! (CreateNamedPipe)"));
+		exit(-1);
+	}
+
+	if (!ConnectNamedPipe(hPipeAux, NULL)) {
+		_tprintf(TEXT("[ERRO] Ligação ao leitor! (ConnectNamedPipe\n"));
+		exit(-1);
+	}
+
+	hPipesMensagem[index] = hPipeAux;
+
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeInputCliente, &hPipesMensagem[index], 0, NULL);
 }
 
 
@@ -94,21 +125,51 @@ void WINAPI enviaJogo() {
 		for (int i = 0; i < 6; i++)
 		{
 			leJogo(&cDados, &j);
-			if (hPipes[i] == INVALID_HANDLE_VALUE) {
-				if (!WriteFile(hPipes[i], &j,sizeof(Jogo), &n, NULL)) {
+			if (hPipesJogo[i] == INVALID_HANDLE_VALUE) {
+				if (!WriteFile(hPipesJogo[i], &j,sizeof(Jogo), &n, NULL)) {
 					_tprintf(TEXT("[ERRO] Escrever no pipe n.%d! (WriteFile)\n"), i);
 					exit(-1);
 				}
 			}
 		}
 	}
+}
 
+void WINAPI recebeInputCliente(LPVOID * hP) {
+	DWORD n;
+	BOOL ret;
+	HANDLE hPipe = (HANDLE)hP;
+	Mensagem msg;
+	TCHAR buf[24];
+
+	//Espera por evento para começar a ler as mensagens
+
+	//lê nome do cliente	| Poderá ser retirado daqui
+	ret = ReadFile(hPipe, msg.nomeEmissor, sizeof(TCHAR) * 24, &n, NULL);
+	msg.nomeEmissor[n / sizeof(TCHAR)] = '\0';
+	if (!ret || !n) {
+		_tprintf(TEXT("[ERRO] %d %d... (ReadFile)\n"), ret, n);
+		exit(-1);
+	}
+
+
+	//lê input do cliente
+	while (1) {
+		ret = ReadFile(hPipe, msg.mensagem, sizeof(TCHAR) * 24, &n, NULL);
+		buf[n / sizeof(TCHAR)] = '\0';
+		if (!ret || !n) {
+			_tprintf(TEXT("[ERRO] %d %d... (ReadFile)\n"), ret, n);
+			break;
+		}
+
+		escreveMsg(&cDados, &msg);
+	}
 }
 
 
 int _tmain(int argc, LPSTR argv[]) {
 
-	HANDLE hTRecebeCliente, hTEnviaJogo, hTrataCliente[6];
+	HANDLE hTRecebeCliente, hTEnviaJogo;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -137,12 +198,15 @@ int _tmain(int argc, LPSTR argv[]) {
 
 	for (int i = 0; i < 6; i++)
 	{
-		hPipes[i] = INVALID_HANDLE_VALUE;
+		hPipesJogo[i] = INVALID_HANDLE_VALUE;
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		hPipesMensagem[i] = INVALID_HANDLE_VALUE;
 	}
 
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);
 
 	hTEnviaJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)enviaJogo, NULL, 0, NULL);
-
-	
 }
