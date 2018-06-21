@@ -7,7 +7,7 @@
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
 
-HANDLE hPipes[6];
+HANDLE hPipes[6], hEventEnviaJogo;
 DadosCtrl cDados;
 
 void leJogo(DadosCtrl * cDados, Jogo * jogo) {
@@ -109,7 +109,7 @@ void WINAPI enviaJogo() {
 
 int _tmain(int argc, LPSTR argv[]) {
 
-	HANDLE hTRecebeCliente, hTEnviaJogo, hTrataCliente[6], hEventEnviaJogo;
+	HANDLE hTRecebeCliente, hTEnviaJogo, hTrataCliente[6];
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);

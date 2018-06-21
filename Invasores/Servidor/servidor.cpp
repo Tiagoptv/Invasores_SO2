@@ -12,6 +12,7 @@ void gotoxy(int x, int y);
 Jogo j;
 DadosCtrl cDados;
 HANDLE hMutexJogo;	//Mutex relativo ao acesso ao jogo por parte das threads das naves invasoras
+HANDLE hEventEnviaJogo;
 
 
 //Memória Partilhada
@@ -348,6 +349,10 @@ void WINAPI readConsoleInput() {
 	int ch;		
 
 	while (j.comecaJogo) {
+
+		//falta set on cliente
+		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
+		WaitForSingleObject(hEventEnviaJogo, INFINITE);
 
 		leMsg(&cDados, &msg);
 
