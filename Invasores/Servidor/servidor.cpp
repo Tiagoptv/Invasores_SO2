@@ -356,10 +356,7 @@ void WINAPI readConsoleInput() {
 		CloseHandle(hEventEnviaJogo);
 		leMsg(&cDados, &msg);
 
-		//se uma tecla é premida...
-		if (_kbhit()) {
-
-			ch = _getch();
+		ch = _tstoi(msg.mensagem);
 	
 			//move left
 			if (ch == 97) {
