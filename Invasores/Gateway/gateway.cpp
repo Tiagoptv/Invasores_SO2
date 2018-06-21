@@ -48,6 +48,7 @@ void WINAPI trataCliente(LPVOID * hP) {
 		}
 
 		escreveMsg(&cDados, &msg);
+
 	}
 }
 

@@ -80,7 +80,7 @@
       </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>D:\Documentos\ISEC\2ºAno\2ºSemestre\SO2\Prática\TP\InvasoresSO2\Invasores\Debug\DLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>C:\Users\tiago\Documents\ISEC\4oAno\SO2\TP\Invasores_SO2\Invasores\Debug\DLL.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
