@@ -202,7 +202,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 	case WM_CREATE:
 
-		//hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
+		hThreadLigaPipes = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ligaPipes, NULL, 0, NULL);
 
 		hEventEnviaJogo = CreateEvent(NULL, TRUE, FALSE, TEXT("EventoEnviaJogo"));
 
@@ -365,7 +365,7 @@ void WINAPI ligaPipes() {
 	//Liga Pipe Jogo
 	//Espera pelo pipe
 	if (!WaitNamedPipe(PIPE_JOGO, NMPWAIT_WAIT_FOREVER)) {
-		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_JOGO);	//Remover depois de testar
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)(%d)\n"), PIPE_JOGO, GetLastError());	//Remover depois de testar
 		exit(-1);
 	}
 	//Liga ao pipe

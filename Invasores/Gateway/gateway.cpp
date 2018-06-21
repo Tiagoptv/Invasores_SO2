@@ -6,6 +6,7 @@
 #include "..\DLL\dll.h"
 
 #define PIPE_NAME TEXT("\\\\.\\pipe\\teste")
+#define PIPE_JOGO TEXT("\\\\.\\pipe\\jogo")
 
 HANDLE hPipes[6], hPipesJogo[6],hEventEnviaJogo;
 DadosCtrl cDados;
@@ -81,6 +82,8 @@ void WINAPI recebeCliente() {
 
 	hPipes[index] = hPipeAux;
 
+	hPipeAux = CreateNamedPipe(PIPE_JOGO, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
+
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)trataCliente, &hPipes[index], 0, NULL);
 
 }
@@ -140,6 +143,11 @@ int _tmain(int argc, LPSTR argv[]) {
 	for (int i = 0; i < 6; i++)
 	{
 		hPipes[i] = INVALID_HANDLE_VALUE;
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		hPipesJogo[i] = INVALID_HANDLE_VALUE;
 	}
 
 	hTRecebeCliente = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeCliente, NULL, 0, NULL);

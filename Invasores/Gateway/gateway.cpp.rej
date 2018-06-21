@@ -1,0 +1,67 @@
+diff a/Invasores/Gateway/gateway.cpp b/Invasores/Gateway/gateway.cpp	(rejected hunks)
+@@ -55,27 +55,53 @@
+ 		escreveMsg(&cDados, &msg);
+ 	}
+ }
+-
++*/
+ 
+ void WINAPI recebeCliente() {
+ 	HANDLE hPipeAux;
+ 
+-	int index;
++	int index = -1;
+ 
+-	while (1) {
+-		do
+-		{
+-			for (int i = 0; i < 6; i++) {
+-				if (hPipes[i] == INVALID_HANDLE_VALUE) {
+-					index = i;
+-				}
++
++	//Pipe Jogo
++	do
++	{
++		for (int i = 0; i < 6; i++) {
++			if (hPipesJogo[i] == INVALID_HANDLE_VALUE) {
++				index = i;
+ 			}
+-		} while (index == -1);
++		}
++	} while (index == -1);
++
++
++	hPipeAux = CreateNamedPipe(PIPE_JOGO, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
++	if (hPipeAux == INVALID_HANDLE_VALUE) {
++		_tprintf(TEXT("[ERRO] Criar Named Pipe Jogo! (CreateNamedPipe)"));
++		exit(-1);
++	}
++
++	if (!ConnectNamedPipe(hPipeAux, NULL)) {
++		_tprintf(TEXT("[ERRO] Liga��o ao leitor! (ConnectNamedPipe\n"));
++		exit(-1);
+ 	}
+ 
+-	hPipeAux = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Jogo), sizeof(Jogo), 1000, NULL);
++	hPipesJogo[index] = hPipeAux;
++
++	//Pipe Mensagens
++	index = -1;
++
++	do
++	{
++		for (int i = 0; i < 6; i++) {
++			if (hPipesMensagem[i] == INVALID_HANDLE_VALUE) {
++				index = i;
++			}
++		}
++	} while (index == -1);
++
++	hPipeAux = CreateNamedPipe(PIPE_MENSAGEM, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE, 6, sizeof(Mensagem), sizeof(Mensagem), 1000, NULL);
+ 	if (hPipeAux == INVALID_HANDLE_VALUE) {
+-		_tprintf(TEXT("[ERRO] Criar Named Pipe! (CreateNamedPipe)"));
++		_tprintf(TEXT("[ERRO] Criar Named Pipe Mensagem! (CreateNamedPipe)"));
+ 		exit(-1);
+ 	}
+ 
